@@ -18,11 +18,14 @@ function runCli(args) {
 
 describe('calculator', () => {
   describe('exposed operations', () => {
-    test('exports exactly the four basic operations', () => {
+    test('exports all supported operations', () => {
       expect(Object.keys(OPERATIONS).sort()).toEqual([
         'addition',
         'division',
+        'modulo',
         'multiplication',
+        'power',
+        'squareRoot',
         'subtraction',
       ]);
     });
@@ -127,12 +130,97 @@ describe('calculator', () => {
     });
   });
 
+  describe('modulo', () => {
+    test('returns the remainder: 10 % 3 = 1', () => {
+      expect(calculate('modulo', 10, 3)).toBe(1);
+    });
+
+    test('returns zero when the division is exact', () => {
+      expect(calculate('modulo', 9, 3)).toBe(0);
+    });
+
+    test('keeps the sign of the dividend, as JavaScript does', () => {
+      expect(calculate('modulo', -7, 3)).toBe(-1);
+    });
+
+    test('throws when the divisor is zero', () => {
+      expect(() => calculate('modulo', 10, 0)).toThrow('Módulo por zero não é permitido.');
+    });
+  });
+
+  describe('power', () => {
+    test('raises the base to the exponent: 2 ^ 10 = 1024', () => {
+      expect(calculate('power', 2, 10)).toBe(1024);
+    });
+
+    test('any number to the power of zero is one', () => {
+      expect(calculate('power', 7, 0)).toBe(1);
+    });
+
+    test('supports negative exponents', () => {
+      expect(calculate('power', 2, -2)).toBe(0.25);
+    });
+
+    test('accepts the pow and ** aliases', () => {
+      expect(calculate('pow', 2, 3)).toBe(8);
+      expect(calculate('**', 2, 3)).toBe(8);
+    });
+
+    test('throws when the result is not finite', () => {
+      expect(() => calculate('power', 10, 400)).toThrow(
+        'Resultado indefinido ou fora do intervalo numérico.'
+      );
+    });
+
+    test('throws when the result is undefined', () => {
+      expect(() => calculate('power', -8, 1 / 3)).toThrow(
+        'Resultado indefinido ou fora do intervalo numérico.'
+      );
+    });
+  });
+
+  describe('squareRoot', () => {
+    test('returns the square root: sqrt(16) = 4', () => {
+      expect(calculate('squareRoot', 16)).toBe(4);
+    });
+
+    test('returns decimal results', () => {
+      expect(calculate('squareRoot', 2)).toBeCloseTo(1.41421356);
+    });
+
+    test('square root of zero is zero', () => {
+      expect(calculate('squareRoot', 0)).toBe(0);
+    });
+
+    test('throws for negative numbers', () => {
+      expect(() => calculate('squareRoot', -4)).toThrow(
+        'Raiz quadrada de número negativo não é permitida.'
+      );
+    });
+
+    test('accepts the sqrt alias', () => {
+      expect(calculate('sqrt', 25)).toBe(5);
+    });
+  });
+
+  describe('operand count', () => {
+    test('throws when a binary operation receives one operand', () => {
+      expect(() => calculate('addition', 1)).toThrow('espera 2 operando(s), mas recebeu 1.');
+    });
+
+    test('throws when a unary operation receives two operands', () => {
+      expect(() => calculate('squareRoot', 4, 2)).toThrow('espera 1 operando(s), mas recebeu 2.');
+    });
+  });
+
   describe('operation symbols', () => {
     test.each([
       ['+', 2, 3, 5],
       ['-', 10, 4, 6],
       ['*', 45, 2, 90],
       ['/', 20, 5, 4],
+      ['%', 10, 3, 1],
+      ['**', 2, 10, 1024],
     ])('symbol %s behaves like its operation (%p, %p -> %p)', (symbol, a, b, expected) => {
       expect(calculate(symbol, a, b)).toBe(expected);
     });
@@ -166,7 +254,7 @@ describe('calculator', () => {
 
   describe('unknown operations', () => {
     test('throws for an unsupported operation name', () => {
-      expect(() => calculate('power', 2, 3)).toThrow('Operação desconhecida: "power"');
+      expect(() => calculate('exponentiation', 2, 3)).toThrow('Operação desconhecida: "exponentiation"');
     });
 
     test('is case sensitive for operation names', () => {
@@ -194,10 +282,20 @@ describe('calculator CLI', () => {
     expect(result.stderr).toContain('Divisão por zero não é permitida.');
   });
 
-  test('prints usage and exits with 1 when arguments are missing', () => {
-    const result = runCli(['add', '1']);
+  test('prints usage and exits with 1 when no operation is given', () => {
+    const result = runCli([]);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('Uso:');
+  });
+
+  test('prints an error and exits with 1 when operand count is wrong', () => {
+    const result = runCli(['add', '1']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('espera 2 operando(s)');
+  });
+
+  test('computes square root with a single operand', () => {
+    expect(runCli(['squareRoot', '16']).stdout).toBe('4\n');
   });
 
   test('prints an error and exits with 1 for invalid operands', () => {
