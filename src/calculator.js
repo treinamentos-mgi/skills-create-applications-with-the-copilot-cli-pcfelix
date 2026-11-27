@@ -2,40 +2,55 @@
 /**
  * Calculadora CLI com as quatro operações aritméticas básicas.
  *
- * Operações suportadas (nome ou símbolo equivalente):
- *   - add,      +   Adição:         a + b
- *   - subtract, -   Subtração:      a - b
- *   - multiply, *   Multiplicação:  a * b
- *   - divide,   /   Divisão:        a / b (b não pode ser zero)
+ * Operações suportadas:
+ *   - addition        Adição:         a + b
+ *   - subtraction     Subtração:      a - b
+ *   - multiplication  Multiplicação:  a * b
+ *   - division        Divisão:        a / b (b não pode ser zero)
+ *
+ * Atalhos aceitos na CLI: add, subtract, multiply, divide, +, -, *, /.
  *
  * Uso:
  *   node src/calculator.js <operação> <número1> <número2>
  *
  * Exemplos:
- *   node src/calculator.js add 2 3        # 5
- *   node src/calculator.js subtract 10 4  # 6
- *   node src/calculator.js multiply 3 7   # 21
- *   node src/calculator.js divide 8 2     # 4
+ *   node src/calculator.js addition 2 3        # 5
+ *   node src/calculator.js subtraction 10 4    # 6
+ *   node src/calculator.js multiplication 3 7  # 21
+ *   node src/calculator.js division 8 2        # 4
  */
 
-const OPERATIONS = {
-  add: (a, b) => a + b,
-  subtract: (a, b) => a - b,
-  multiply: (a, b) => a * b,
-  divide: (a, b) => {
-    if (b === 0) {
-      throw new Error('Divisão por zero não é permitida.');
-    }
-    return a / b;
-  },
-};
+function addition(a, b) {
+  return a + b;
+}
 
-// Símbolos aceitos como atalhos para as operações acima.
-const SYMBOLS = {
-  '+': 'add',
-  '-': 'subtract',
-  '*': 'multiply',
-  '/': 'divide',
+function subtraction(a, b) {
+  return a - b;
+}
+
+function multiplication(a, b) {
+  return a * b;
+}
+
+function division(a, b) {
+  if (b === 0) {
+    throw new Error('Divisão por zero não é permitida.');
+  }
+  return a / b;
+}
+
+const OPERATIONS = { addition, subtraction, multiplication, division };
+
+// Atalhos (nomes curtos e símbolos) mapeados para os nomes das operações.
+const ALIASES = {
+  add: 'addition',
+  subtract: 'subtraction',
+  multiply: 'multiplication',
+  divide: 'division',
+  '+': 'addition',
+  '-': 'subtraction',
+  '*': 'multiplication',
+  '/': 'division',
 };
 
 function parseNumber(value) {
@@ -50,20 +65,19 @@ function parseNumber(value) {
 }
 
 function calculate(operation, a, b) {
-  const name = SYMBOLS[operation] || operation;
-  const fn = OPERATIONS[name];
-  if (!fn) {
+  const name = Object.hasOwn(ALIASES, operation) ? ALIASES[operation] : operation;
+  if (!Object.hasOwn(OPERATIONS, name)) {
     throw new Error(
-      `Operação desconhecida: "${operation}". Use add, subtract, multiply ou divide (ou +, -, *, /).`
+      `Operação desconhecida: "${operation}". Use addition, subtraction, multiplication ou division (ou add, subtract, multiply, divide, +, -, *, /).`
     );
   }
-  return fn(parseNumber(a), parseNumber(b));
+  return OPERATIONS[name](parseNumber(a), parseNumber(b));
 }
 
 function main(argv) {
   const [operation, a, b] = argv;
   if (!operation || a === undefined || b === undefined) {
-    console.error('Uso: node src/calculator.js <add|subtract|multiply|divide> <número1> <número2>');
+    console.error('Uso: node src/calculator.js <addition|subtraction|multiplication|division> <número1> <número2>');
     return 1;
   }
 
@@ -80,4 +94,11 @@ if (require.main === module) {
   process.exitCode = main(process.argv.slice(2));
 }
 
-module.exports = { calculate, OPERATIONS };
+module.exports = {
+  addition,
+  subtraction,
+  multiplication,
+  division,
+  calculate,
+  OPERATIONS,
+};

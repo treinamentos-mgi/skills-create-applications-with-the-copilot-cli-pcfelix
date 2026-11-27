@@ -1,6 +1,6 @@
 const { execFileSync } = require('child_process');
 const path = require('path');
-const { calculate, OPERATIONS } = require('../calculator');
+const { addition, subtraction, multiplication, division, calculate, OPERATIONS } = require('../calculator');
 
 const CLI_PATH = path.join(__dirname, '..', 'calculator.js');
 
@@ -19,7 +19,25 @@ function runCli(args) {
 describe('calculator', () => {
   describe('exposed operations', () => {
     test('exports exactly the four basic operations', () => {
-      expect(Object.keys(OPERATIONS).sort()).toEqual(['add', 'divide', 'multiply', 'subtract']);
+      expect(Object.keys(OPERATIONS).sort()).toEqual([
+        'addition',
+        'division',
+        'multiplication',
+        'subtraction',
+      ]);
+    });
+
+    test('exports addition, subtraction, multiplication and division as functions', () => {
+      expect(addition(2, 3)).toBe(5);
+      expect(subtraction(10, 4)).toBe(6);
+      expect(multiplication(45, 2)).toBe(90);
+      expect(division(20, 5)).toBe(4);
+      expect(() => division(1, 0)).toThrow('Divisão por zero não é permitida.');
+    });
+
+    test('accepts full operation names in calculate', () => {
+      expect(calculate('addition', 2, 3)).toBe(5);
+      expect(calculate('division', 20, 5)).toBe(4);
     });
   });
 
